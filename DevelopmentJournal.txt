@@ -1,0 +1,235 @@
+Creatures:
+    Races:
+            Human:  //Humans have GOLD. They can obtain it by selling loot or at different amounts from slaying enemies. Steal gold from human enemies defeated.    
+            Warrior;
+            Wizard;
+            Archer; //Has a quiver (int) which represents the arrows possessed. Using a x-Stack will replenish the quiver by x.num. When switching between ranged weapons, quiver resets, returning a x-stack of the removed weapon.
+        Monster:   //Monsters have SOULS. They get 1 soul from each enemy defeated, and steal the souls from enemy monsters defeated.
+            Undead;
+            Slime;
+            Animal;
+            Note: Not adding smth like "Bandit" cause you can have human as enemy and have it called bandit.
+
+Note: Maybe weaknessess and strengths are all considered unlimited time buffs? Could be cool and simple
+Buffs:
+    HealthBuff;
+    DamageBuff; 
+    TypeBuff; 
+
+Attacks:
+    Attacker sends attack. Constructor of the attack: attack(attacker).
+    The attack has different attributes that will be used to calculate the damage.
+    Damage will be calculated in receiveAttack(attack) method.
+
+    ON THE OTHER HAND, how a damage is calculated is the difference between classes.
+    Maybe the attack class only contains damage amount and sender? then could be a struct
+
+Inventory:
+    Items:
+        Equippable:
+            Weapon:
+                { Longsword;
+                  Shortsword;
+                  Polearm;
+                  Mace;
+                  Bow;
+                  Crossbow;
+                  Staff;
+                  Book; }
+            Armor:  //Can only have 1 per inventory? would be easy. Or add active armor too? At this point just create whole inventory interface!
+                { Helmet;
+                  Chestplate;
+                  Pants;
+                  Boots;
+                  Necklace; }
+        Consumable:        
+            Potion:
+                Health/Mana;
+                BuffPotion;
+            { BoltStack;
+              ArrowStack;
+              GoldBundle; }
+    Note:
+        Every creature has an active weapon: this can be chosen in an inventory GUI and will be set to null when unarmed. When weapon break, weapon turns null (check in item.remove)
+
+For now, let's just create the various creatures with their inventory. I think attacks are something to be handles later.
+
+///IMPORTANT///
+
+COMBAT SYSTEM:
+Attack is sent. 
+THINGS TO CONSIDER:
+1) Race of the attacker, race of the receiver.
+2) Attack buffs applied to the attacker, defense buffs applied to the defender. (Consider various equips)
+3) Type of weapon used to send the attack.
+
+1) How does each race interact with every other race?
+Humans 
+
+3) The attack sent has a list of all the buffs that were applied to the 
+
+///IMPORTANT END//
+
+Future reference: when displaying the inventory, pass it as const dList<Item*>& since the display will use it readonly and saves you a lot of trouble with memory leak.
+
+Day 1:
+Created CREATURE class and subclasses HUMAN and MONSTER. No functions implemented yet. Created ITEM class.
+Mainly just focused on the planning and am tired af so probably ony did half assed work. But it was fun.
+
+Day 2:
+Created all subclasses for humans and monsters. Implemented in level CREATURE and HUMAN the useItem() functions for equippables.
+Still have to do for consumables as they don't exist yet. I really have to decide on a combat system asap.
+
+Day 3:
+Done some boring stuff idk and also implemented useBundle from humans (gold) and archers (arrows or gold). Now am tired af so will just go to sleep.
+
+Day 4:
+I started implementing the attack function in archer and Human, but am too confused and tired to finish them. They're unfinished and trash, fix them.
+
+I really have to decide a combat system to use somehow.
+Do weapons have buffs? Do humans have buffs? Do armors have buffs? I think all should.
+
+Armor has list of strengths and list of weaknesses. So does the a weapon. When launching an attack, you create a list of all the buffs and debuffs
+summed from character + weapon buffs and put them in a list. So the attack class contains attacker, bufflist?
+maybe it contains: buffList, flat damage dealt, damageType, pointer to attacker for class!
+BuffList gets compared to list of debuffs owned by the enemy + armor, damage type is a flat damage multiplier and so is the race of the attacker, damage is base damage.
+But what is a buff?
+If someone does a fire attack, damage +50%. If the other has fire defense, that multiplier is ignored.
+A buff has a duration (-1 if infinite) and effectiveness! fire +50% good enchantment, fire defense -25% nice enchantment.
+There is an enum for buffs too. They are unrelated to damage types.
+
+BUFFS { Health, Mana, Fire, Ice, Water, Wind, Earth };
+if buffType > 1 add to buffList
+
+There can be Health and mana buffs too. if type = Health and effectiveness +50%, mah HP is +50% and when it gets activated current HP is also +50%. Same for mana.
+A buff is a normal class that does not inherit any other class.
+
+//HOW TO KNOW IF IT'S ATTACK BUFF OR DEFENSE BUFF? I GUESS BUFFTYPE? BUT IT'S ABOUT WHAT ENCHANTMENT IS IT NO? TODO
+
+class Buff {
+private:
+    std::string name;
+    buffType type;
+    double effectiveness;       //effectiveness% is the damage multiplier.
+    int duration;               //-1 if infinite.
+public:
+    Buff( etc );
+    setters, getters;
+    reduceDuration(int = 1);
+};
+
+Note: when attacking, a buff list is created and inserted into the attack class. When two buffs of the same kind are found, their multiplier is summed and are not inserted
+in the list in the attack object separately. If it is a debuff, effectiveness is simply negative and therefore the sum will work nonetheless.
+
+HUMAN:
+Receives 1.25x damage from Monsters. Deals normal damage to other humans.
+When a human gets attacked, all 
+
+Humans can equip a primary weapon and a full set of armor.
+
+ARCHER:
+Receives 2x damage from wizard. Receives 1.25x damage from pierce and slash.
+When an archer gets attacked, aforementioned multipliers will apply. 
+
+Archers can equip either a bow or a crossbow as primary weapon. If no arrows or bow, will use secondary weapon. If no secondary weapon, normal punch. Archer's punch cause 15 flat blunt damage (+buffs).
+To acquire arrows, an archer must use a arrow/bolt bundle. When the primary weapon equipped gets uneqipped, all the arrows in the quill will become a bundle that goes in your inventory.
+Can only have a shortsword or a mace as secondary weapon, and they will do 50% of the damage they are supposed to do if used to attack.
+When an archer attacks, an Attack object is created. Firstly it will check if the archer has any primary weapon equipped, if so, will check if there are arrows in the quill. If both are positive,
+the attack damage will equal that of the weapon used. Any buffs applied on the weapon will be added to the buffList of the attack object, then all player buffs will be added to those of the weapon.
+If the archer lacks either arrows or primary weapon, will check for a secondary weapon equipped, and attack with that, starting with 50% weapon damage but applying all weapon enchants.
+If there is no secondary weapon either, player will throw a punch, dealing 15 blunt damage and adding player buffs (Fire punch!!!!!).
+
+WARRIOR:
+Receives 2x damage from archer. All sources of damage are reduced by 10% at all times which becomes 25% when wearing full armor. Can equip a shield as secondary weapon. 
+Shield will reduce the damage by [damage], flat dmg reduction, and can be enchanted with defensive buffs.
+
+WIZARD:
+Receives 2x damage from warrior. Reduced magic damage by 50% and other sources of damage are increased by 25%.
+
+MONSTER:
+Receives 1.5x damage from magic attacks. Deal normal damage to other monsters.
+
+UNDEAD:
+Receives 1.5x damage from magic. Any fire buff on the incoming attack is doubled.
+
+SLIME:
+Receives 75% extra damage from blunt. Receives 75% reduced damage from any other mean. Immune to magic.
+
+ANIMAL:
+Receives normal damage from all sources. Cannot equip any item. 
+
+
+
+
+
+
+#ifndef EQUIPPABLE_H
+#define EQUIPPABLE_H
+
+#include "../item.h"
+
+class Equippable : public Item
+{
+protected:
+    //Image image
+    int durability; //-1 if item is indestructible.
+public:
+    Equippable(std::string n, int v, unsigned int id, int d) : Item(n, v, id) , durability(d) {}
+    bool useItem(int = 1) override;
+};
+
+#endif // EQUIPPABLE_H
+
+#ifndef WEAPON_H
+#define WEAPON_H
+
+#include <string>
+#include "../equippable.h"
+
+enum weaponFamily { Longsword, Shortsword, Polearm, Mace, Bow, Crossbow, Staff, Book };
+enum damageType { slash, pierce, blunt, magic };
+
+class Weapon : public Equippable
+{
+protected:
+    //Image image
+    weaponFamily family;
+    damageType type;
+    int damage;
+public:
+    Weapon(std::string n, int v, unsigned int id, int d, weaponFamily f, damageType t, int dmg)
+        : Equippable(n, v, id, d), family(f), type(t), damage(dmg) {}
+    bool useItem(int = 1) override;
+
+    damageType getType() { return type; }
+    weaponFamily getFamily() { return family; }
+
+};
+
+#endif // WEAPON_H
+
+
+#ifndef ARMOR_H
+#define ARMOR_H
+
+#include <string>
+#include "../equippable.h"
+
+const int ARMOR_PIECES = 5;
+enum piece { helmet, chestplate, pants, boots, necklace };
+
+class Armor : public Equippable
+{
+protected:
+    //Image image
+    piece type;
+    //dList<Buff*>?
+public:
+    Armor();
+    piece getType();
+    bool useItem(int = 1);
+};
+
+#endif // ARMOR_H
+
+64 
